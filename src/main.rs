@@ -108,10 +108,15 @@ fn main() {
     println!("File is {} chars", char_count.unwrap());
 
     let mut line = 1;
+    let mut start = 0;
+    let mut curr = 0;
 
     let mut tokens: Vec<Token> = vec![];
+    let mut errors: Vec<String> = vec![];
 
-    for t in content.chars() {
+    let chars = content.chars().peekable();
+
+    for t in chars {
         match t.to_string().as_str() {
             "\n" => {
                 line = line + 1;
@@ -128,16 +133,95 @@ fn main() {
             ")" => {
                 tokens.push(Token::new(TokenType::RightParen, ")", "", line))           
             },
-
-            "=" => {
-                tokens.push(Token::new(TokenType::Equal, "=", "", line))           
+            "," => {
+                tokens.push(Token::new(TokenType::Comma, ",", "", line))           
             },
-            _ => {}
+            "." => {
+                tokens.push(Token::new(TokenType::Dot, ".", "", line))           
+            },
+            "-" => {
+                tokens.push(Token::new(TokenType::Minus, "-", "", line))           
+            },
+            "+" => {
+                tokens.push(Token::new(TokenType::Plus, "+", "", line))           
+            },
+            ";" => {
+                tokens.push(Token::new(TokenType::Semicolon, ";", "", line))           
+            },
+            "*" => {
+                tokens.push(Token::new(TokenType::Star, "*", "", line))           
+            },
+            "!" => {
+                let mut next = chars.peek().unwrap().to_string().as_str();
+
+                if next == "=" {
+                    tokens.push(Token::new(TokenType::BangEqual, "!=", "", line));
+                } else if next.chars().all(char::is_alphabetic) {
+                    tokens.push(Token::new(TokenType::Bang, "!", "", line));
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                }
+            },
+            "=" => {
+                let mut next = chars.peek().unwrap().to_string().as_str();
+
+                if next == "=" {
+                    tokens.push(Token::new(TokenType::EqualEqual, "==", "", line))           
+                } else if next.chars().all(char::is_alphanumeric) {
+                    tokens.push(Token::new(TokenType::Equal, "=", "", line))           
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                }
+            },
+            "<" => {
+                let mut next = chars.peek().unwrap().to_string().as_str();
+
+                if next == "=" {
+                    tokens.push(Token::new(TokenType::LessEqual, "<=", "", line))           
+                } else if next.chars().all(char::is_alphanumeric) {
+                    tokens.push(Token::new(TokenType::Less, "<", "", line))           
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                }
+            },
+            ">" => {
+                let mut next = chars.peek().unwrap().to_string().as_str();
+
+                if next == "=" {
+                    tokens.push(Token::new(TokenType::GreaterEqual, ">=", "", line))           
+                } else if next.chars().all(char::is_alphanumeric) {
+                    tokens.push(Token::new(TokenType::Greater, ">", "", line))           
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                }
+            },
+            "/" => {
+
+                let mut next = chars.peek().unwrap().to_string().as_str();
+
+                if next == "/" {
+                    // TODO: It is a comment 
+                    //       ignore until the end of the line 
+                    //       consume chars until "\n" is found 
+                } else if next.chars().all(char::is_alphanumeric) {
+                    tokens.push(Token::new(TokenType::Slash, "/", "", line))           
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                }
+            }
+            _ => {
+                errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+            }
         }
     }
 
+    tokens.push(Token::new(TokenType::Eof, "EOF", "", line));
+
     println!("File is {} lines", line - 1);
 
+    // TODO: check if errors exist
+    //       print errors 
+    //       exit process 
     for t in tokens {
         println!("{}", t);
     }
