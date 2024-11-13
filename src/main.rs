@@ -26,6 +26,7 @@ enum TokenType {
     Less,
     LessEqual,
     
+    /*
     Identifier,
     String,
     Number,
@@ -45,6 +46,7 @@ enum TokenType {
     False,
     Var,
     While,
+    */
 
     Eof
 }
@@ -108,19 +110,18 @@ fn main() {
     println!("File is {} chars", char_count.unwrap());
 
     let mut line = 1;
-    let mut start = 0;
-    let mut curr = 0;
 
     let mut tokens: Vec<Token> = vec![];
     let mut errors: Vec<String> = vec![];
 
-    let chars = content.chars().peekable();
-
-    for t in chars {
-        match t.to_string().as_str() {
+    let mut chars = content.chars().peekable();
+ 
+    while let Some(c) = chars.next() {
+        match c.to_string().as_str() {
             "\n" => {
                 line = line + 1;
             },
+            "\t" | "\r" | " " => {},
             "{" => {
                 tokens.push(Token::new(TokenType::LeftBrace, "{", "", line))           
             },
@@ -152,65 +153,68 @@ fn main() {
                 tokens.push(Token::new(TokenType::Star, "*", "", line))           
             },
             "!" => {
-                let mut next = chars.peek().unwrap().to_string().as_str();
+                let next = chars.peek().unwrap();
 
-                if next == "=" {
+                if next.to_string().as_str() == "=" {
+                    chars.next();
                     tokens.push(Token::new(TokenType::BangEqual, "!=", "", line));
-                } else if next.chars().all(char::is_alphabetic) {
-                    tokens.push(Token::new(TokenType::Bang, "!", "", line));
                 } else {
-                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
-                }
+                    tokens.push(Token::new(TokenType::Bang, "!", "", line));
+                } 
             },
             "=" => {
-                let mut next = chars.peek().unwrap().to_string().as_str();
+                let next = chars.peek().unwrap();
 
-                if next == "=" {
-                    tokens.push(Token::new(TokenType::EqualEqual, "==", "", line))           
-                } else if next.chars().all(char::is_alphanumeric) {
-                    tokens.push(Token::new(TokenType::Equal, "=", "", line))           
+                if next.to_string().as_str() == "=" {
+                    tokens.push(Token::new(TokenType::EqualEqual, "==", "", line));
+                    chars.next();
                 } else {
-                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
-                }
+                    tokens.push(Token::new(TokenType::Equal, "=", "", line))           
+                } 
             },
             "<" => {
-                let mut next = chars.peek().unwrap().to_string().as_str();
+                let next = chars.peek().unwrap();
 
-                if next == "=" {
-                    tokens.push(Token::new(TokenType::LessEqual, "<=", "", line))           
-                } else if next.chars().all(char::is_alphanumeric) {
-                    tokens.push(Token::new(TokenType::Less, "<", "", line))           
+                if next.to_string().as_str() == "=" {
+                    tokens.push(Token::new(TokenType::LessEqual, "<=", "", line));
+                    chars.next();
                 } else {
-                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
-                }
+                    tokens.push(Token::new(TokenType::Less, "<", "", line))           
+                }             
             },
             ">" => {
-                let mut next = chars.peek().unwrap().to_string().as_str();
+                let next = chars.peek().unwrap();
 
-                if next == "=" {
-                    tokens.push(Token::new(TokenType::GreaterEqual, ">=", "", line))           
-                } else if next.chars().all(char::is_alphanumeric) {
-                    tokens.push(Token::new(TokenType::Greater, ">", "", line))           
+                if next.to_string().as_str() == "=" {
+                    chars.next();
+                    tokens.push(Token::new(TokenType::GreaterEqual, ">=", "", line));
                 } else {
-                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
-                }
+                    tokens.push(Token::new(TokenType::Greater, ">", "", line))           
+                }      
             },
             "/" => {
+                let next = chars.peek().unwrap();
 
-                let mut next = chars.peek().unwrap().to_string().as_str();
-
-                if next == "/" {
+                if next.to_string().as_str() == "/" {
                     // TODO: It is a comment 
                     //       ignore until the end of the line 
                     //       consume chars until "\n" is found 
-                } else if next.chars().all(char::is_alphanumeric) {
-                    tokens.push(Token::new(TokenType::Slash, "/", "", line))           
+                    chars.next();
+                    while let Some(i) = chars.next() {
+                        match i.to_string().as_str() {
+                            "\n" => {
+                                line = line + 1;
+                                break;
+                            },
+                            _ => {},
+                        }
+                    }
                 } else {
-                    errors.push(format!("Unexpected char '{}' at line {}", t, line))    
-                }
+                    tokens.push(Token::new(TokenType::Slash, "/", "", line))           
+                }             
             }
             _ => {
-                errors.push(format!("Unexpected char '{}' at line {}", t, line))    
+                errors.push(format!("Unexpected char '{}' at line {}", c, line))    
             }
         }
     }
