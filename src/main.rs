@@ -26,10 +26,10 @@ enum TokenType {
     Less,
     LessEqual,
     
-    /*
     Identifier,
     String,
     Number,
+    /*
     
     End,
     Class,
@@ -212,7 +212,23 @@ fn main() {
                 } else {
                     tokens.push(Token::new(TokenType::Slash, "/", "", line))           
                 }             
-            }
+            },
+            "\"" => {
+                let mut s = String::new();
+                while let Some(t) = chars.next() {
+                    // NOTE: does not handle " chars inside string literals yet
+                    match t.to_string().as_str() {
+                        "\"" => {
+                            tokens.push(Token::new(TokenType::String, "", s.as_str(), line));
+                            break;
+                        },
+                        _ => {
+                            s.push_str(t.to_string().as_str());
+                        }
+                    }
+                }
+                
+            },
             _ => {
                 errors.push(format!("Unexpected char '{}' at line {}", c, line))    
             }
