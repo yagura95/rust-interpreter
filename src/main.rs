@@ -227,6 +227,26 @@ fn main() {
                             _ => {},
                         }
                     }
+                } else if next.to_string().as_str() == "*" {
+                    chars.next();
+                    while let Some(i) = chars.next() {
+                        match i.to_string().as_str() { 
+                            "\n" => {
+                                line = line + 1;
+                            },
+                            "*" => {
+                                let a = chars.peek().unwrap();
+                                let a = a.clone().to_string();
+                                let a = a.as_str();
+
+                                if a == "/" {
+                                    chars.next();
+                                    break;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
                 } else {
                     tokens.push(Token::new(TokenType::Slash, "/", "", line))           
                 }             
@@ -308,9 +328,13 @@ fn main() {
 
     println!("File is {} lines", line - 1);
 
-    // TODO: check if errors exist
-    //       print errors 
-    //       exit process 
+    if errors.len() > 0 {
+        for e in errors {
+            println!("{}", e);
+        }
+        process::exit(1)
+    }
+
     for t in tokens {
         println!("{}", t);
     }

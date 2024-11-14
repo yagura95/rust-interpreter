@@ -2,3 +2,10 @@
 var a = "hello";
 var b = 6;
 var c = 9 / 6;
+/* awef
+awef 
+awefa
+ awef
+*/
+
+var teste =2.5; 
