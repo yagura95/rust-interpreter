@@ -2,8 +2,9 @@ use std::env;
 use std::io::Read;
 use std::process;
 use std::fs::File;
+use std::collections::HashMap;
 
-#[derive(std::fmt::Debug)]
+#[derive(std::fmt::Debug, std::clone::Clone)]
 enum TokenType {
     LeftParen,
     RightParen,
@@ -29,9 +30,8 @@ enum TokenType {
     Identifier,
     String,
     Number,
-    /*
     
-    End,
+    And,
     Class,
     Else,
     For,
@@ -46,7 +46,6 @@ enum TokenType {
     False,
     Var,
     While,
-    */
 
     Eof
 }
@@ -71,7 +70,8 @@ impl Token {
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Token type: {:?}\nLexeme: {}\nLiteral: {}\nLine: {}", self.token_type, self.lexeme, self.literal, self.line) 
+        //write!(f, "Token type: {:?}\nLexeme: {}\nLiteral: {}\nLine: {}", self.token_type, self.lexeme, self.literal, self.line) 
+        write!(f, "Token type: {:?}, {}, {}, {}", self.token_type, self.lexeme, self.literal, self.line) 
     }
 }
 
@@ -100,7 +100,7 @@ fn main() {
         Ok(file) => file,
         Err(err) => {
             println!("Failed opening file: {}", err);
-            process::exit(2);
+            process::exit(1);
         }
     };
 
@@ -109,12 +109,30 @@ fn main() {
     
     println!("File is {} chars", char_count.unwrap());
 
-    let mut line = 1;
+    let keywords: HashMap<&str, TokenType> = HashMap::from([
+        ("and",    TokenType::And), 
+        ("class",  TokenType::Class), 
+        ("else",   TokenType::Else), 
+        ("false",  TokenType::False),
+        ("for",    TokenType::For),
+        ("if",     TokenType::If),
+        ("nil",    TokenType::Nil),
+        ("or",     TokenType::Or),
+        ("print",  TokenType::Print),
+        ("return", TokenType::Return),
+        ("super",  TokenType::Super),
+        ("this",   TokenType::This),
+        ("true",   TokenType::True),
+        ("var",    TokenType::Var),
+        ("while",  TokenType::While),
+        ]);    
 
     let mut tokens: Vec<Token> = vec![];
     let mut errors: Vec<String> = vec![];
 
     let mut chars = content.chars().peekable();
+
+    let mut line = 1;
  
     while let Some(c) = chars.next() {
         match c.to_string().as_str() {
@@ -230,7 +248,58 @@ fn main() {
                 
             },
             _ => {
-                errors.push(format!("Unexpected char '{}' at line {}", c, line))    
+                // NOTE: identifiers must start with alphabetic chars
+                if c.is_ascii_digit() {
+                    let mut floating = false;
+                    let mut n = String::new();
+
+                    n.push_str(c.to_string().as_str());
+
+                    while let Some(d) = chars.next() {
+                        if d.to_string().as_str() == "." && floating {
+                            errors.push(format!("Multiple '.' chars in number"));
+                        } else if d.to_string().as_str() == "." && n.len() < 1 {
+                            errors.push(format!("Number must with a digit"));
+                        } else if d.to_string().as_str() == "." {
+                            n.push_str(d.to_string().as_str());
+                            floating = true;
+                        } else if d.is_ascii_digit() {
+                            n.push_str(d.to_string().as_str());
+                        } else {
+                            break;
+                        }
+                    }
+
+                    tokens.push(Token::new(TokenType::Number, "", n.as_str(), line));
+                         
+                } else if c.is_ascii_alphabetic() {
+                    let mut s = String::new();
+
+                    s.push_str(c.to_string().as_str());
+
+                    while let Some(c) = chars.next() {
+                        if c.is_alphanumeric() {
+                            s.push_str(c.to_string().as_str());
+                        } else {
+                            break
+                        }
+                    }
+
+                    let k = keywords.get(s.as_str());
+                    
+                    match k {
+                        None => {
+                            tokens.push(Token::new(TokenType::Identifier, "", s.as_str(), line));
+                        },
+                        Some(t) => {
+                            tokens.push(Token::new(t.clone(), "", s.as_str(), line));
+
+                        }
+                    }
+
+                } else {
+                    errors.push(format!("Unexpected char '{}' at line {}", c, line))    
+                }
             }
         }
     }
