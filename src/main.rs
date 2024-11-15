@@ -109,6 +109,10 @@ fn main() {
     
     println!("File is {} chars", char_count.unwrap());
 
+    /********************/
+    /*      Scanner     */
+    /********************/
+
     let keywords: HashMap<&str, TokenType> = HashMap::from([
         ("and",    TokenType::And), 
         ("class",  TokenType::Class), 
@@ -339,5 +343,34 @@ fn main() {
         println!("{}", t);
     }
 
+    /********************/
+    /*     Parser       */
+    /********************/
+    
+    // TODO: define expressions types
+    /*
+      "Binary   : Expr left, Token operator, Expr right",
+      "Grouping : Expr expression",
+      "Literal  : Object value",
+      "Unary    : Token operator, Expr right"
+    */  
 
+    // TODO: AST pretty printer
+
+    // Expression grammar 
+    /*
+            expression     → equality ;
+            equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+            comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+            term           → factor ( ( "-" | "+" ) factor )* ;
+            factor         → unary ( ( "/" | "*" ) unary )* ;
+            unary          → ( "!" | "-" ) unary
+                           | primary ;
+            primary        → NUMBER | STRING | "true" | "false" | "nil"
+                           | "(" expression ")" ;
+    */
+
+    // TODO: generate syntax tree = parser
+    // TODO: create functions to walk expression grammar recursively
 }
+
